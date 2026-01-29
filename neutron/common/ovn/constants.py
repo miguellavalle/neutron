@@ -27,6 +27,7 @@ OVN_NETWORK_MTU_EXT_ID_KEY = 'neutron:mtu'
 OVN_PORT_NAME_EXT_ID_KEY = 'neutron:port_name'
 OVN_PORT_EXT_ID_KEY = 'neutron:port_id'
 OVN_PORT_FIP_EXT_ID_KEY = 'neutron:port_fip'
+OVN_PORT_SEGMENT_EXT_ID_KEY = 'neutron:port_segment_id'
 OVN_PORT_BP_CAPABILITIES_KEY = 'neutron:port_capabilities'
 OVN_PORT_VNIC_TYPE_KEY = 'neutron:vnic_type'
 OVN_ROUTER_NAME_EXT_ID_KEY = 'neutron:router_name'
@@ -266,6 +267,7 @@ ACL_EXPECTED_COLUMNS_NBDB = (
 
 # Resource types
 TYPE_NETWORKS = 'networks'
+TYPE_SEGMENTS = 'segments'
 TYPE_PORTS = 'ports'
 TYPE_SECURITY_GROUP_RULES = 'security_group_rules'
 TYPE_ROUTERS = 'routers'
@@ -277,6 +279,7 @@ TYPE_ADDRESS_GROUPS = 'address_groups'
 
 TYPES_PRIORITY_ORDER = (
     TYPE_NETWORKS,
+    TYPE_SEGMENTS,
     TYPE_SECURITY_GROUPS,
     TYPE_SUBNETS,
     TYPE_ROUTERS,

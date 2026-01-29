@@ -24,6 +24,7 @@ from neutron_lib.api.definitions import extra_dhcp_opt as edo_ext
 from neutron_lib.api.definitions import port_security as psec
 from neutron_lib.api.definitions import portbindings
 from neutron_lib.api.definitions import provider_net
+from neutron_lib.api.definitions import segment as segment_def
 from neutron_lib.api import validators
 from neutron_lib import constants as const
 from neutron_lib import context as n_context
@@ -48,6 +49,7 @@ from neutron.common.ovn import exceptions as ovn_exc
 from neutron.common import utils as common_utils
 from neutron.conf.plugins.ml2.drivers.ovn import ovn_conf
 from neutron.db import models_v2
+from neutron.db import segments_db
 from neutron.objects import ports as ports_obj
 
 LOG = log.getLogger(__name__)
@@ -255,6 +257,47 @@ def ovn_provnet_port_name(network_id):
 def ovn_extport_chassis_group_name(port_id):
     # The name of the HA Chassis Group entry will be neutron-extport-<UUID>
     return constants.OVN_HA_CH_GROUP_EXTPORT_PREFIX + '%s' % port_id
+
+
+def is_vlan_segment(segment):
+    """Identify VLAN segments requiring separate logical switches.
+
+    VLAN segments have both physical_network AND segmentation_id populated,
+    distinguishing them from flat networks (which only have physical_network).
+
+    :param segment: Segment dictionary
+    :return: True if segment is a VLAN segment, False otherwise
+    """
+    return segment.get(segment_def.NETWORK_TYPE) == const.TYPE_VLAN
+
+
+def network_needs_lswitch(context, network_id=None, segments=None):
+    """Determine if network needs its own logical switch.
+
+    Logic depends on configuration:
+    - Feature disabled: Always need network logical switch (existing behavior)
+    - Feature enabled: Only need network logical switch for non-VLAN segments
+      or when no segments exist (fallback)
+
+    :param context: Neutron context for DB operations
+    :param network_id: Network ID to fetch segments from DB (optional)
+    :param segments: List of network segments (optional, takes precedence)
+    :return: True if network needs its own logical switch
+    """
+    # Optimization: Check feature first to avoid expensive DB reads
+    if not ovn_conf.is_logical_switch_per_vlan_segment_enabled():
+        return True
+
+    # Get segments if not provided
+    if segments is None:
+        if network_id is None:
+            raise ValueError(
+                _("Either network_id or segments must be provided"))
+        segments = segments_db.get_network_segments(context, network_id)
+
+    # When feature is enabled, check for non-VLAN segments
+    non_vlan_segments = [s for s in segments if not is_vlan_segment(s)]
+    return len(non_vlan_segments) > 0 or len(segments) == 0
 
 
 def ovn_vhu_sockpath(sock_dir, port_id):

@@ -544,6 +544,9 @@ class FakePortContext:
         self.fake_host = host
         self.fake_segments_to_bind = segments_to_bind
         self.set_binding = mock.Mock()
+        self._plugin_context = mock.Mock()
+        self.network = mock.Mock()
+        self.network.network_segments = segments_to_bind
 
     @property
     def current(self):
